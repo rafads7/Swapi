@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="planets_empty_state">No planets found. Try refreshing to download them!</string>
+    <string name="planets_name">Name</string>
+    <string name="planets_climate">Climate</string>
+    <string name="planets_population">Population</string>
+    <string name="planets_diameter">Diameter (km)</string>
+    <string name="planets_gravity">Gravity</string>
+    <string name="planets_terrain">Terrain</string>
+    <string name="planets_scroll_to_top_button_text">Scroll to top</string>
+    <string name="planets_title">Planets</string>
+    <string name="planet_detail">Planet Detail</string>
+    <string name="planets_error_database_not_found">Planets not found in database. Try downloading!</string>
+    <string name="planets_error_database_unknown">There was an error while accessing the database. Please, retry.</string>
+    <string name="planets_error_server">There was an error while accessing the remote server. Please, retry.</string>
+    <string name="planets_error_unknown">Unexpected error. Please, retry.</string>
+</resources>

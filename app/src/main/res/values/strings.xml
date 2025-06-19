@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Swapi</string>
+    <string name="swapi_title">Swapi</string>
+    <string name="swapi_planets">Planets</string>
 </resources>

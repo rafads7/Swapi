@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ui_retry">Retry</string>
+    <string name="ui_loading">Loading</string>
+    <string name="ui_error_generic">Oops! An error happened!</string>
+</resources>
