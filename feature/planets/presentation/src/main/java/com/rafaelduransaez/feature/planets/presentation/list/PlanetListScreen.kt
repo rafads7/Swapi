@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.rafaelduransaez.core.ui.FullScreenError
 import com.rafaelduransaez.core.ui.FullScreenLoadingIndicator
@@ -102,7 +104,9 @@ private fun PlanetList(
     onPlanetClick: (planetUid: String) -> Unit
 ) {
     LazyColumn(
-        modifier = modifier,
+        modifier = modifier.semantics {
+            contentDescription = "List of Star Wars planets"
+        },
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         state = listState
@@ -128,6 +132,7 @@ fun PlanetListItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .semantics(mergeDescendants = true) {  }
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -145,19 +150,19 @@ fun PlanetListItem(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Population: ${planet.population}",
+                    text = stringResource(R.string.planet_population_val, planet.population),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "Climate: ${planet.climate}",
+                    text = stringResource(R.string.planet_climate_val, planet.climate),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Go to details",
+                contentDescription = stringResource(R.string.planet_go_to_details),
                 tint = MaterialTheme.colorScheme.primary
             )
         }

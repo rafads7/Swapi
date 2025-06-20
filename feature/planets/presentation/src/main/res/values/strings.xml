@@ -15,4 +15,8 @@
     <string name="planets_error_server">There was an error while accessing the remote server. Please, retry.</string>
     <string name="planets_error_unknown">Unexpected error. Please, retry.</string>
     <string name="planets_back">Back</string>
+    <string name="planet_climate_val">Climate: %1$s</string>
+    <string name="planet_population_val">Population: %1$s</string>
+    <string name="planet_go_to_details">Go to item details</string>
+
 </resources>
