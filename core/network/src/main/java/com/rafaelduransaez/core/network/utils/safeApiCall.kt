@@ -26,13 +26,3 @@ suspend fun <T> safeApiCall(
 } catch (e: Exception) {
     SwapiResult.Failure(ApiError.Unknown(e))
 }
-
-inline fun <S> safeApiFlowCall(
-    crossinline block: suspend () -> SwapiResult<S, SwapiFailure>
-): Flow<SwapiResult<S, SwapiFailure>> = flow {
-    try {
-        emit(block())
-    } catch (e: Exception) {
-        emit(SwapiResult.failure(ApiError.Unknown(e)))
-    }
-}

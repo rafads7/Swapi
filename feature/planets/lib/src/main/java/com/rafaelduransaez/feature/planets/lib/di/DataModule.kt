@@ -3,9 +3,9 @@ package com.rafaelduransaez.feature.planets.lib.di
 import com.rafaelduransaez.core.database.dao.PlanetDao
 import com.rafaelduransaez.core.network.di.SwapiRetrofitClient
 import com.rafaelduransaez.feature.planets.data.remote.api.SwapiPlanetsService
-import com.rafaelduransaez.feature.planets.data.remote.sources.PlanetsLocalDataSource
+import com.rafaelduransaez.feature.planets.data.local.PlanetsLocalDataSource
 import com.rafaelduransaez.feature.planets.data.remote.sources.PlanetsRemoteDataSource
-import com.rafaelduransaez.feature.planets.data.remote.sources.PlanetsRoomDataSource
+import com.rafaelduransaez.feature.planets.data.local.PlanetsRoomDataSource
 import com.rafaelduransaez.feature.planets.data.remote.sources.SwapiApiRemoteDataSource
 import com.rafaelduransaez.feature.planets.data.repo.PlanetsRepositoryImpl
 import com.rafaelduransaez.feature.planets.domain.repository.PlanetRepository
@@ -16,7 +16,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import javax.inject.Singleton
-import kotlin.time.TimeSource
 
 @Module
 @InstallIn(SingletonComponent::class)

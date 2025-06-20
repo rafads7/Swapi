@@ -58,7 +58,7 @@ fun ApiError.toPlanetError(): PlanetError = when (this) {
 
 fun DatabaseError.toPlanetError(): PlanetError = when (this) {
     DatabaseError.NotFound -> PlanetError.DatabaseNotFoundError
-    is DatabaseError.DatabaseNotAvailable,
+    is DatabaseError.DatabaseOperationsError,
     is DatabaseError.SqlSyntaxError -> PlanetError.DatabaseKindError
     is DatabaseError.Unknown -> PlanetError.Unknown
 }

@@ -1,4 +1,4 @@
-package com.rafaelduransaez.ui
+package com.rafaelduransaez.core.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
@@ -25,7 +26,7 @@ fun FullScreenLoadingIndicator(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(modifier.testTag("LoadingIndicator"))
         Spacer(modifier = Modifier.height(8.dp))
 
         if (showLoadingMessage)

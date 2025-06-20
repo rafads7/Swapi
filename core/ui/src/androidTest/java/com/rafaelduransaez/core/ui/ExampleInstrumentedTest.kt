@@ -1,4 +1,4 @@
-package com.rafaelduransaez.feature.planets.presentation
+package com.rafaelduransaez.core.ui
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,9 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals(
-            "com.rafaelduransaez.feature.planets.presentation.test",
-            appContext.packageName
-        )
+        assertEquals("com.rafaelduransaez.core.ui.test", appContext.packageName)
     }
 }

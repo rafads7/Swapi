@@ -12,8 +12,8 @@ import com.rafaelduransaez.core.common.time.Clock
 import com.rafaelduransaez.core.database.model.PlanetEntity
 import com.rafaelduransaez.core.database.util.DatabaseError
 import com.rafaelduransaez.core.database.util.safeDbCall
-import com.rafaelduransaez.core.database.util.safeDbFlow
-import com.rafaelduransaez.feature.planets.data.remote.sources.PlanetsLocalDataSource
+import com.rafaelduransaez.core.database.util.safeDbFlowCall
+import com.rafaelduransaez.feature.planets.data.local.PlanetsLocalDataSource
 import com.rafaelduransaez.feature.planets.data.remote.sources.PlanetsRemoteDataSource
 import com.rafaelduransaez.feature.planets.domain.model.PlanetDetailModel
 import com.rafaelduransaez.feature.planets.domain.model.PlanetError
@@ -23,10 +23,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class PlanetsRepositoryImpl @Inject constructor(
@@ -36,45 +40,6 @@ class PlanetsRepositoryImpl @Inject constructor(
     @StaleTimeout private val staleTimeout: Int,
     @IoDispatcher private val dispatcher: CoroutineDispatcher
 ) : PlanetRepository {
-
-
-    //TODO
-    suspend fun getPlanets3(): Flow<SwapiResult<List<PlanetSummaryModel>, PlanetError>> {
-        return safeDbFlow { localDataSource.getAllPlanets() }
-            .map { cachedResult ->
-                when (cachedResult) {
-                    is Success -> {
-                        val cachedPlanets = cachedResult.data
-                        if (cachedPlanets.isNotEmpty()) { //TODO AND NULLS?
-                            Success(cachedPlanets.toPlanetSummaries())
-                        }
-
-                        val now = clock.currentTimeMillis()
-                        val isStale = checkIsStale(now)
-
-                        if (cachedPlanets.isEmpty() || isStale) {
-                            when (val result = fetchDataFromRemote(now)) {
-                                is Success -> {
-                                    val savedPlanets = updateLocallyFromRemote(result)
-                                    Success(savedPlanets.toPlanetSummaries())
-                                }
-
-                                is Failure -> {
-                                    // If fetching fails there was no cache, emit failure
-                                        result
-
-                                }
-                            }
-                        }
-                        Success(cachedPlanets.toPlanetSummaries())
-                    }
-
-                    is Failure -> Failure(cachedResult.error.toPlanetError())
-                }
-            }
-            .flowOn(dispatcher)
-    }
-
 
     override suspend fun getPlanets(): Flow<SwapiResult<List<PlanetSummaryModel>, PlanetError>> =
         flow {
@@ -114,19 +79,6 @@ class PlanetsRepositoryImpl @Inject constructor(
                 }
             }
 
-    private suspend fun checkIsStale(now: Long): Boolean {
-        return when (val result = getLastUpdated()) {
-            is Success -> {
-                val lastUpdated = result.data
-                lastUpdated == null || now - lastUpdated > staleTimeout
-            }
-            is Failure -> true
-        }
-    }
-
-    private suspend fun getLastUpdated(): SwapiResult<Long?, DatabaseError> =
-        safeDbCall { localDataSource.getLastUpdated() }
-
     private suspend fun fetchDataFromLocal(): List<PlanetEntity>? =
         localDataSource.getAllPlanets().firstOrNull()
 
@@ -143,10 +95,10 @@ class PlanetsRepositoryImpl @Inject constructor(
 
 
     override suspend fun getPlanetById(uid: String): Flow<SwapiResult<PlanetDetailModel, PlanetError>> {
-        return safeDbFlow { localDataSource.getPlanetById(uid) }
+        return safeDbFlowCall { localDataSource.getPlanetById(uid) }
             .mapSuccess { it.toDetailModel() }
             .mapFailure { it.toPlanetError() }
-
+            .flowOn(dispatcher)
     }
 
 }

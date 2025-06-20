@@ -43,7 +43,7 @@ android {
 
 dependencies {
 
-    implementation(project(":ui"))
+    implementation(project(":core:ui"))
     implementation(project(":feature:planets:lib"))
 
     implementation(libs.androidx.core.ktx)

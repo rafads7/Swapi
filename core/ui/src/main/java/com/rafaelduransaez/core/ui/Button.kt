@@ -1,4 +1,4 @@
-package com.rafaelduransaez.ui
+package com.rafaelduransaez.core.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.material3.Button
@@ -27,7 +27,7 @@ fun SwapiButton(
     ) {
         Text(
             text = stringResource(textId),
-            color = colorScheme.tertiary
+            color = textColor
         )
     }
 }

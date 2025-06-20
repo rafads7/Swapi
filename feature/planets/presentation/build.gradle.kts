@@ -37,7 +37,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":ui"))
+    implementation(project(":core:ui"))
     implementation(project(":core:common"))
     implementation(project(":core:base:presentation"))
     implementation(project(":feature:planets:domain"))
@@ -54,6 +54,8 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.ui.test.junit4)
+
 
     //Compose
     implementation(libs.androidx.compose.runtime)

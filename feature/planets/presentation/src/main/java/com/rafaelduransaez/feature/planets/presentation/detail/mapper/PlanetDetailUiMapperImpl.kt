@@ -13,10 +13,6 @@ class PlanetDetailUiMapperImpl @Inject constructor(
 
     override fun map(model: PlanetDetailModel) = listOf(
         PlanetFeature(
-            label = R.string.planets_name,
-            value = model.name.replaceFirstChar { it.uppercase() }
-        ),
-        PlanetFeature(
             label = R.string.planets_climate,
             value = model.climate.replaceFirstChar { it.uppercase() }
         ),

@@ -32,13 +32,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.rafaelduransaez.core.ui.FullScreenError
+import com.rafaelduransaez.core.ui.FullScreenLoadingIndicator
+import com.rafaelduransaez.core.ui.ProvideAppBarTitle
+import com.rafaelduransaez.core.ui.SwapiButton
 import com.rafaelduransaez.feature.planets.domain.model.PlanetSummaryModel
 import com.rafaelduransaez.feature.planets.presentation.R
 import com.rafaelduransaez.feature.planets.presentation.list.Constants.FIRST_ITEM_INDEX
-import com.rafaelduransaez.ui.FullScreenError
-import com.rafaelduransaez.ui.FullScreenLoadingIndicator
-import com.rafaelduransaez.ui.SwapiButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -47,6 +50,10 @@ fun PlanetListScreen(
     uiState: PlanetListUiState,
     onUiEvent: (PlanetListUiEvent) -> Unit,
 ) {
+    ProvideAppBarTitle {
+        Text(text = stringResource(R.string.planets_title))
+    }
+
     when (uiState) {
         PlanetListUiState.Loading -> FullScreenLoadingIndicator()
         is PlanetListUiState.Error ->
@@ -78,7 +85,7 @@ fun PlanetListContent(
             .fillMaxSize()
             .padding(vertical = 8.dp)
     ) {
-        PlanetList(modifier, listState, planets, onPlanetClick)
+        PlanetList(modifier.testTag("PlanetList"), listState, planets, onPlanetClick)
         ScrollToTopButton(
             showScrollToTopButton = showScrollToTopButton,
             coroutineScope = coroutineScope,
@@ -168,7 +175,7 @@ fun BoxScope.ScrollToTopButton(
 ) {
     AnimatedVisibility(showScrollToTopButton, modifier = Modifier.align(Alignment.TopCenter)) {
         SwapiButton(
-            modifier = modifier.align(Alignment.TopCenter),
+            modifier = modifier.testTag("ScrollToTopButton").align(Alignment.TopCenter),
             textId = textId
         ) {
             coroutineScope.launch {

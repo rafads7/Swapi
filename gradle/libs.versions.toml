@@ -26,6 +26,7 @@ materialIconsCore = "1.7.8"
 okhttpVersion = "4.12.0"
 retrofitVersion = "2.9.0"
 roomVersion = "2.7.0"
+uiTestJunit4 = "1.8.3"
 
 [libraries]
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }

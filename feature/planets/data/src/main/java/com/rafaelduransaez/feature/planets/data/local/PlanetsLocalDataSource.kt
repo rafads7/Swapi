@@ -1,4 +1,4 @@
-package com.rafaelduransaez.feature.planets.data.remote.sources
+package com.rafaelduransaez.feature.planets.data.local
 
 import com.rafaelduransaez.core.database.model.PlanetEntity
 import kotlinx.coroutines.flow.Flow

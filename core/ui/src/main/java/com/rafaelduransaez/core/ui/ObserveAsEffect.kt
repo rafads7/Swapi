@@ -1,4 +1,4 @@
-package com.rafaelduransaez.ui
+package com.rafaelduransaez.core.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

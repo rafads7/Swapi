@@ -1,4 +1,4 @@
-package com.rafaelduransaez.ui
+package com.rafaelduransaez.core.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
@@ -9,33 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-
-@Composable
-fun NonEditableTextField(
-    modifier: Modifier = Modifier,
-    text: String,
-    @StringRes labelId: Int
-) {
-    SwapiLabelValueText(modifier, text, labelId)
-}
-
-@Composable
-fun NonEditableTextField(
-    modifier: Modifier = Modifier,
-    text: Double,
-    @StringRes labelId: Int
-) {
-    SwapiLabelValueText(modifier, text.toString(), labelId)
-}
-
-@Composable
-fun NonEditableTextField(
-    modifier: Modifier = Modifier,
-    text: Int,
-    @StringRes labelId: Int
-) {
-    SwapiLabelValueText(modifier, text.toString(), labelId)
-}
 
 @Composable
 fun SwapiLabelValueText(

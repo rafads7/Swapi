@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.rafaelduransaez.ui"
+    namespace = "com.rafaelduransaez.core.ui"
     compileSdk = 35
 
     defaultConfig {
@@ -24,12 +24,12 @@ android {
             )
         }
     }
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
-    }
-    buildFeatures {
-        compose = true
     }
     kotlinOptions {
         jvmTarget = "21"
@@ -53,5 +53,4 @@ dependencies {
     implementation(libs.androidx.material.icons.core)
     implementation(libs.androidx.material3.windows.sizeclass)
     implementation(libs.androidx.navigation.compose)
-
 }

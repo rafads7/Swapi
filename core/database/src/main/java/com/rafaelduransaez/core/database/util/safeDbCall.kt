@@ -20,13 +20,21 @@ suspend fun <T> safeDbCall(
     dbCall: suspend () -> T
 ): SwapiResult<T, DatabaseError> = withContext(dispatcher) {
     try {
-        SwapiResult.success(dbCall())
+        val result = dbCall()
+        when {
+            result == null -> SwapiResult.Failure(DatabaseError.NotFound)
+            result is List<*> && result.isEmpty() ->
+                SwapiResult.Failure(DatabaseError.NotFound)
+
+            else -> SwapiResult.Success(result)
+        }
     } catch (e: Exception) {
+        if (e is CancellationException) throw e
         SwapiResult.failure(e.toDatabaseError())
     }
 }
 
-inline fun <reified T> safeDbFlow(
+inline fun <reified T> safeDbFlowCall(
     crossinline block: () -> Flow<T?>
 ): Flow<SwapiResult<T, DatabaseError>> {
     return block()

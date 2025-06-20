@@ -58,7 +58,7 @@ class PlanetDetailViewModel @Inject constructor(
     }
 
     private fun onGetPlanetSuccess(planet: PlanetDetailModel) {
-        _uiState.update { PlanetDetailUiState.Success(uiMapper.map(planet)) }
+        _uiState.update { PlanetDetailUiState.Success(planet.name, uiMapper.map(planet)) }
 
     }
 
@@ -74,7 +74,7 @@ class PlanetDetailViewModel @Inject constructor(
 
 sealed interface PlanetDetailUiState {
     data object Loading : PlanetDetailUiState
-    data class Success(val planetFeatures: List<PlanetFeature>) : PlanetDetailUiState
+    data class Success(val planetName: String, val planetFeatures: List<PlanetFeature>) : PlanetDetailUiState
     data class Error(@StringRes val errorMessageId: Int) : PlanetDetailUiState
 }
 

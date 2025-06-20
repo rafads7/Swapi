@@ -14,4 +14,5 @@
     <string name="planets_error_database_unknown">There was an error while accessing the database. Please, retry.</string>
     <string name="planets_error_server">There was an error while accessing the remote server. Please, retry.</string>
     <string name="planets_error_unknown">Unexpected error. Please, retry.</string>
+    <string name="planets_back">Back</string>
 </resources>
