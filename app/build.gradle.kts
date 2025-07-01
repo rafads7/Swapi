@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hiltAndroid)
     alias(libs.plugins.ksp)
 }
@@ -45,6 +46,7 @@ dependencies {
 
     implementation(project(":core:ui"))
     implementation(project(":feature:planets:lib"))
+    implementation(project(":feature:ships:lib"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -66,6 +68,9 @@ dependencies {
 
     //Navigation
     implementation(libs.androidx.navigation.compose)
+
+    //Serialization
+    implementation(libs.kotlinx.serialization.json)
 
     //Hilt
     implementation(libs.hilt.android)

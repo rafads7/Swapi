@@ -2,4 +2,10 @@
     <string name="app_name">Swapi</string>
     <string name="swapi_title">Swapi</string>
     <string name="swapi_planets">Planets</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_planets">Planets</string>
+    <string name="bottom_nav_ships">Ships</string>
+    <string name="bottom_nav_planets_description">Navigate to planets</string>
+    <string name="bottom_nav_ships_description">Navigate to ships</string>
 </resources>

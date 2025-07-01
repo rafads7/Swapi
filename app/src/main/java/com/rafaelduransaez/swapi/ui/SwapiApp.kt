@@ -22,6 +22,14 @@ fun SwapiApp(modifier: Modifier = Modifier, appState: SwapiAppState = rememberSw
                 navController = appState.navController,
                 scrollBehavior = appState.scrollBehavior,
             )
+        },
+        bottomBar = {
+            if (appState.shouldShowBottomBar) {
+                SwapiBottomBar(
+                    currentDestination = appState.currentTopLevelDestination,
+                    onNavigateToDestination = appState::navigateToTopLevelDestination,
+                )
+            }
         }
     ) { innerPadding ->
         Box(
