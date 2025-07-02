@@ -10,29 +10,55 @@ import com.rafaelduransaez.core.common.di.IoDispatcher
 import com.rafaelduransaez.core.common.di.StaleTimeout
 import com.rafaelduransaez.core.common.time.Clock
 import com.rafaelduransaez.core.database.model.PlanetEntity
-import com.rafaelduransaez.core.database.util.DatabaseError
-import com.rafaelduransaez.core.database.util.safeDbCall
 import com.rafaelduransaez.core.database.util.safeDbFlowCall
+
 import com.rafaelduransaez.feature.planets.data.local.PlanetsLocalDataSource
 import com.rafaelduransaez.feature.planets.data.remote.sources.PlanetsRemoteDataSource
 import com.rafaelduransaez.feature.planets.domain.model.PlanetDetailModel
 import com.rafaelduransaez.feature.planets.domain.model.PlanetError
+import com.rafaelduransaez.feature.planets.domain.model.PlanetError.DatabaseKindError
+import com.rafaelduransaez.feature.planets.domain.model.PlanetError.Unknown
 import com.rafaelduransaez.feature.planets.domain.model.PlanetSummaryModel
 import com.rafaelduransaez.feature.planets.domain.repository.PlanetRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.fold
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import javax.inject.Singleton
+import com.rafaelduransaez.feature.planets.data.repo.RefreshState.Error as RefreshError
+import com.rafaelduransaez.feature.planets.data.repo.RefreshState.Success as RefreshSuccess
 
+/**
+ * Refresh state for background operations
+ */
+sealed class RefreshState {
+    data object Idle : RefreshState()
+    data object Loading : RefreshState()
+    data class Success(val timestamp: Long) : RefreshState()
+    data class Error(val error: PlanetError, val timestamp: Long) : RefreshState()
+}
+
+/**
+ * Improved Repository Implementation using Reactive Single Source of Truth Pattern with Refresh State Management
+ *
+ * Key Improvements:
+ * 1. Database as single source of truth - UI always observes database
+ * 2. Background refresh strategy with state communication
+ * 3. Proper synchronization - prevents race conditions
+ * 4. Optimized reactivity - reduces unnecessary emissions
+ * 5. Enhanced error handling with UI notification
+ * 6. Refresh state management for better UX
+ */
+@Singleton
 class PlanetsRepositoryImpl @Inject constructor(
     private val localDataSource: PlanetsLocalDataSource,
     private val remoteDataSource: PlanetsRemoteDataSource,
@@ -41,58 +67,101 @@ class PlanetsRepositoryImpl @Inject constructor(
     @IoDispatcher private val dispatcher: CoroutineDispatcher
 ) : PlanetRepository {
 
-    override suspend fun getPlanets(): Flow<SwapiResult<List<PlanetSummaryModel>, PlanetError>> =
-        flow {
-            val cachedPlanets = fetchDataFromLocal()
+    // Mutex to prevent concurrent network calls
+    private val refreshMutex = Mutex()
 
-            // Always emit cached planets if available
-            if (!cachedPlanets.isNullOrEmpty()) {
-                emit(Success(cachedPlanets.toPlanetSummaries()))
+    // Refresh state management for UI communication
+    private val _refreshState = MutableStateFlow<RefreshState>(RefreshState.Idle)
+    val refreshState: StateFlow<RefreshState> = _refreshState.asStateFlow()
+
+    /**
+     * Reactive Single Source of Truth with Enhanced Error Communication
+     *
+     * Benefits:
+     * - Single emission per data change (no double emission)
+     * - Truly reactive - UI updates automatically when database changes
+     * - Efficient - no unnecessary network calls
+     * - Consistent state - database is always the source of truth
+     * - Refresh state communication for better UX
+     */
+    override suspend fun getPlanets(): Flow<SwapiResult<List<PlanetSummaryModel>, PlanetError>> =
+        fetchPlanetsFromLocal()
+            .distinctUntilChanged()
+            .onStart { refreshDataIfNeeded() }
+            .flowOn(dispatcher)
+
+    /**
+     * Manual refresh method for pull-to-refresh or retry scenarios
+     */
+    override suspend fun refreshPlanets(): SwapiResult<Unit, PlanetError> = refreshMutex.withLock {
+        _refreshState.value = RefreshState.Loading
+        val timestamp = clock.currentTimeMillis()
+
+        when (val result = fetchPlanetsFromRemote(timestamp)) {
+            is Success -> {
+                localDataSource.savePlanets(result.data)
+                _refreshState.value = RefreshSuccess(timestamp)
+                Success(Unit)
             }
 
-            val lastUpdated = localDataSource.getLastUpdated()
-            val now = clock.currentTimeMillis()
-            val isStale = lastUpdated == null || now - lastUpdated > staleTimeout
-
-            if (cachedPlanets.isNullOrEmpty() || isStale) {
-                when (val result = fetchDataFromRemote(now)) {
-                    is Success -> {
-                        val savedPlanets = updateLocallyFromRemote(result)
-                        emit(Success(savedPlanets.toPlanetSummaries()))
-                    }
-
-                    is Failure -> {
-                        // If fetching fails there was no cache, emit failure
-                        if (cachedPlanets.isNullOrEmpty()) {
-                            emit(result)
-                        }
-                    }
-                }
+            is Failure -> {
+                _refreshState.value = RefreshError(result.error, timestamp)
+                Failure(result.error)
             }
         }
-            .flowOn(dispatcher)
-            .catch { e ->
-                when (e) {
-                    is CancellationException -> throw e
-                    is SQLException -> emit(Failure(PlanetError.DatabaseKindError))
-                    else -> emit(Failure(PlanetError.Unknown))
-                }
-            }
-
-    private suspend fun fetchDataFromLocal(): List<PlanetEntity>? =
-        localDataSource.getAllPlanets().firstOrNull()
-
-    private suspend fun updateLocallyFromRemote(result: Success<List<PlanetEntity>>): List<PlanetEntity> {
-        val entitiesToSave = result.data
-        localDataSource.savePlanets(entitiesToSave)
-        return entitiesToSave
     }
 
-    private suspend fun fetchDataFromRemote(now: Long): SwapiResult<List<PlanetEntity>, PlanetError> =
-        remoteDataSource.fetchPlanets()
-            .mapSuccess { it.toPlanetEntities(now) }
+    private suspend fun refreshDataIfNeeded() {
+        if (refreshMutex.isLocked) return
+
+        refreshMutex.withLock {
+            try {
+                val now = clock.currentTimeMillis()
+                val shouldRefresh = shouldRefreshData(now)
+
+                if (shouldRefresh) {
+                    _refreshState.value = RefreshState.Loading
+                    refreshFromRemote(now)
+                }
+            } catch (e: Exception) {
+                _refreshState.value = RefreshError(Unknown, clock.currentTimeMillis())
+            }
+        }
+    }
+
+    private suspend fun shouldRefreshData(currentTime: Long): Boolean {
+        val lastUpdated = localDataSource.getLastUpdated()
+        return when {
+            lastUpdated == null || currentTime - lastUpdated > staleTimeout -> true
+            else -> false
+        }
+    }
+
+    private suspend fun refreshFromRemote(timestamp: Long) {
+        fetchPlanetsFromRemote(timestamp).fold(
+            onSuccess = { planets ->
+                val savedItems = localDataSource.savePlanets(planets)
+                if (savedItems.size < planets.size) {
+                    _refreshState.value = RefreshError(DatabaseKindError, timestamp)
+                } else {
+                    _refreshState.value = RefreshSuccess(timestamp)
+                }
+            },
+            onFailure = { error ->
+                _refreshState.value = RefreshError(error, timestamp)
+            }
+        )
+    }
+
+    private fun fetchPlanetsFromLocal(): Flow<SwapiResult<List<PlanetSummaryModel>, PlanetError>> =
+        safeDbFlowCall { localDataSource.getAllPlanets() }
+            .mapSuccess { it.toPlanetSummaries() }
             .mapFailure { it.toPlanetError() }
 
+    private suspend fun fetchPlanetsFromRemote(timestamp: Long): SwapiResult<List<PlanetEntity>, PlanetError> =
+        remoteDataSource.fetchPlanets()
+            .mapSuccess { it.toPlanetEntities(timestamp) }
+            .mapFailure { it.toPlanetError() }
 
     override suspend fun getPlanetById(uid: String): Flow<SwapiResult<PlanetDetailModel, PlanetError>> {
         return safeDbFlowCall { localDataSource.getPlanetById(uid) }
@@ -100,5 +169,4 @@ class PlanetsRepositoryImpl @Inject constructor(
             .mapFailure { it.toPlanetError() }
             .flowOn(dispatcher)
     }
-
 }

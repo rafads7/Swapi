@@ -1,9 +1,6 @@
 package com.rafaelduransaez.core.network.utils
 
-import com.rafaelduransaez.core.base.common.SwapiFailure
 import com.rafaelduransaez.core.base.common.SwapiResult
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import retrofit2.Response
 import java.io.IOException
 import java.net.SocketTimeoutException

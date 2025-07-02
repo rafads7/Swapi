@@ -7,8 +7,9 @@ import com.rafaelduransaez.feature.planets.domain.model.PlanetError
 import com.rafaelduransaez.feature.planets.domain.model.PlanetSummaryModel
 import com.rafaelduransaez.feature.planets.domain.repository.PlanetRepository
 import com.rafaelduransaez.feature.planets.domain.usecases.GetPlanetListUseCase
+import com.rafaelduransaez.feature.planets.domain.usecases.RefreshPlanetsUseCase
 import com.rafaelduransaez.feature.planets.presentation.R
-import com.rafaelduransaez.feature.planets.presentation.list.PlanetListUiEffect.*
+
 import com.rafaelduransaez.feature.planets.presentation.list.mapper.PlanetListUiMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,8 @@ import javax.inject.Inject
 @HiltViewModel
 class PlanetListViewModel @Inject constructor(
     private val uiMapper: PlanetListUiMapper,
-    private val getPlanetListUseCase: GetPlanetListUseCase
+    private val getPlanetListUseCase: GetPlanetListUseCase,
+    private val refreshPlanetsUseCase: RefreshPlanetsUseCase
 ) : SwapiViewModel<PlanetListUiEffect>() {
 
     private val _uiState = MutableStateFlow<PlanetListUiState>(PlanetListUiState.Loading)
@@ -36,8 +38,9 @@ class PlanetListViewModel @Inject constructor(
 
     internal fun onUiEvent(event: PlanetListUiEvent) {
         when (event) {
-            is PlanetListUiEvent.ShowDetail -> navigateTo(NavigateToDetail(event.uid))
+            is PlanetListUiEvent.ShowDetail -> navigateTo(PlanetListUiEffect.NavigateToDetail(event.uid))
             PlanetListUiEvent.Retry -> loadPlanets()
+            PlanetListUiEvent.Refresh -> refreshPlanets()
         }
     }
 
@@ -48,6 +51,21 @@ class PlanetListViewModel @Inject constructor(
                 it.fold(
                     onSuccess = ::onGetPlanetsSuccess,
                     onFailure = ::onGetPlanetsFailure
+                )
+            }
+        }
+    }
+
+    private fun refreshPlanets() {
+        viewModelScope.launch {
+            refreshPlanetsUseCase().collect {
+                it.fold(
+                    onSuccess = {
+                        // Refresh successful - data will be automatically updated through getPlanets flow
+                    },
+                    onFailure = {
+                        //show snackbar
+                    }
                 )
             }
         }
@@ -76,6 +94,7 @@ sealed interface PlanetListUiState {
 sealed interface PlanetListUiEvent {
     data class ShowDetail(val uid: String) : PlanetListUiEvent
     data object Retry : PlanetListUiEvent
+    data object Refresh : PlanetListUiEvent
 }
 
 sealed interface PlanetListUiEffect {

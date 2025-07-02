@@ -19,4 +19,9 @@
     <string name="planet_population_val">Population: %1$s</string>
     <string name="planet_go_to_details">Go to item details</string>
 
+    <!-- Enhanced UI strings for refresh state management -->
+    <string name="planets_loading">Loading planets…</string>
+    <string name="planets_retry">Retry</string>
+    <string name="planets_refresh_failed">Failed to refresh data</string>
+
 </resources>
