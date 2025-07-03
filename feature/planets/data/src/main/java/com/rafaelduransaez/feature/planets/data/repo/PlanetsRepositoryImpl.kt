@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -111,7 +112,7 @@ class PlanetsRepositoryImpl @Inject constructor(
         }
     }
 
-    private suspend fun refreshDataIfNeeded() {
+    private suspend fun  refreshDataIfNeeded() {
         if (refreshMutex.isLocked) return
 
         refreshMutex.withLock {

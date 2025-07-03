@@ -20,10 +20,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -56,17 +60,17 @@ fun PlanetListScreen(
         Text(text = stringResource(R.string.planets_title))
     }
 
-    when (uiState) {
-        PlanetListUiState.Loading -> FullScreenLoadingIndicator()
-        is PlanetListUiState.Error ->
-            FullScreenError(message = uiState.errorMessageId) {
-                onUiEvent(PlanetListUiEvent.Retry)
-            }
-
-        is PlanetListUiState.ShowPlanets -> {
+    when {
+        uiState.isLoading -> FullScreenLoadingIndicator()
+        uiState.errorMessageId != null -> FullScreenError(message = uiState.errorMessageId) {
+            onUiEvent(PlanetListUiEvent.Retry)
+        }
+        else -> {
             PlanetListContent(
                 modifier = Modifier.fillMaxSize(),
-                planets = uiState.planets
+                planets = uiState.filteredPlanets,
+                searchQuery = uiState.searchQuery,
+                onSearchQueryChange = { query -> onUiEvent(PlanetListUiEvent.Search(query)) }
             ) { uid -> onUiEvent(PlanetListUiEvent.ShowDetail(uid)) }
         }
     }
@@ -77,23 +81,71 @@ fun PlanetListContent(
     modifier: Modifier = Modifier,
     listState: LazyListState = rememberLazyListState(),
     planets: List<PlanetSummaryModel>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     onPlanetClick: (planetUid: String) -> Unit
 ) {
     val coroutineScope = rememberCoroutineScope()
     val showScrollToTopButton by remember { derivedStateOf { listState.firstVisibleItemIndex > FIRST_ITEM_INDEX } }
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .padding(vertical = 8.dp)
     ) {
-        PlanetList(modifier.testTag("PlanetList"), listState, planets, onPlanetClick)
-        ScrollToTopButton(
-            showScrollToTopButton = showScrollToTopButton,
-            coroutineScope = coroutineScope,
-            listState = listState
+        SearchBar(
+            query = searchQuery,
+            onQueryChange = onSearchQueryChange,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
+        
+        Box(modifier = Modifier.weight(1f)) {
+            PlanetList(
+                modifier = Modifier.testTag("PlanetList"),
+                listState = listState,
+                planets = planets,
+                onPlanetClick = onPlanetClick
+            )
+            ScrollToTopButton(
+                showScrollToTopButton = showScrollToTopButton,
+                coroutineScope = coroutineScope,
+                listState = listState
+            )
+        }
     }
+}
+
+@Composable
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("SearchBar"),
+        placeholder = { Text(stringResource(R.string.search_planets_placeholder)) },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = stringResource(R.string.search_icon_description)
+            )
+        },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = stringResource(R.string.clear_search_description)
+                    )
+                }
+            }
+        },
+        singleLine = true
+    )
 }
 
 @Composable
@@ -176,18 +228,69 @@ fun BoxScope.ScrollToTopButton(
     coroutineScope: CoroutineScope,
     listState: LazyListState,
     @StringRes textId: Int = R.string.planets_scroll_to_top_button_text
-
 ) {
-    AnimatedVisibility(showScrollToTopButton, modifier = Modifier.align(Alignment.TopCenter)) {
+    AnimatedVisibility(
+        visible = showScrollToTopButton,
+        modifier = modifier.align(Alignment.BottomEnd)
+    ) {
         SwapiButton(
-            modifier = modifier.testTag("ScrollToTopButton").align(Alignment.TopCenter),
-            textId = textId
-        ) {
-            coroutineScope.launch {
-                listState.animateScrollToItem(0)
+            modifier = Modifier
+                .testTag("ScrollToTopButton")
+                .padding(16.dp),
+            textId = textId,
+            onClick = {
+                coroutineScope.launch {
+                    listState.animateScrollToItem(0)
+                }
             }
-        }
+        )
     }
+}
+
+// Preview functions
+@Composable
+@androidx.compose.ui.tooling.preview.Preview
+fun PlanetListScreenPreview() {
+    val mockPlanets = listOf(
+        PlanetSummaryModel(
+            uid = "1",
+            name = "Tatooine",
+            climate = "Arid",
+            population = 200000
+        ),
+        PlanetSummaryModel(
+            uid = "2",
+            name = "Alderaan",
+            climate = "Temperate",
+            population = 2000000000
+        ),
+        PlanetSummaryModel(
+            uid = "3",
+            name = "Hoth",
+            climate = "Frozen",
+            population = 0
+        )
+    )
+    
+    PlanetListScreen(
+        uiState = PlanetListUiState(
+            isLoading = false,
+            errorMessageId = null,
+            allPlanets = mockPlanets,
+            filteredPlanets = mockPlanets,
+            searchQuery = ""
+        ),
+        onUiEvent = {}
+    )
+}
+
+@Composable
+@androidx.compose.ui.tooling.preview.Preview
+fun SearchBarPreview() {
+    SearchBar(
+        query = "Tatooine",
+        onQueryChange = {}
+    )
 }
 
 object Constants {

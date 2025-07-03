@@ -24,4 +24,9 @@
     <string name="planets_retry">Retry</string>
     <string name="planets_refresh_failed">Failed to refresh data</string>
 
+    <!-- Search functionality strings -->
+    <string name="search_planets_placeholder">Search planets by name or climate</string>
+    <string name="search_icon_description">Search icon</string>
+    <string name="clear_search_description">Clear search</string>
+
 </resources>

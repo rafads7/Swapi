@@ -27,7 +27,7 @@ class PlanetListScreenTest {
         // Arrange
         composeTestRule.setContent {
             PlanetListScreen(
-                uiState = PlanetListUiState.Loading,
+                uiState = PlanetListUiState(isLoading = true),
                 onUiEvent = {}
             )
         }
@@ -42,7 +42,10 @@ class PlanetListScreenTest {
 
         composeTestRule.setContent {
             PlanetListScreen(
-                uiState = PlanetListUiState.Error(errorMessageId),
+                uiState = PlanetListUiState(
+                    isLoading = false,
+                    errorMessageId = errorMessageId
+                ),
                 onUiEvent = { event ->
                     if (event is PlanetListUiEvent.Retry) {
                         wasRetryClicked = true
@@ -62,7 +65,13 @@ class PlanetListScreenTest {
 
         composeTestRule.setContent {
             PlanetListScreen(
-                uiState = PlanetListUiState.ShowPlanets(planets),
+                uiState = PlanetListUiState(
+                    isLoading = false,
+                    errorMessageId = null,
+                    allPlanets = planets,
+                    filteredPlanets = planets,
+                    searchQuery = ""
+                ),
                 onUiEvent = {}
             )
         }
@@ -78,9 +87,14 @@ class PlanetListScreenTest {
         val planets = createMockPlanetList(1) // Just need one planet for this test
 
         composeTestRule.setContent {
-            PlanetListContent (planets = planets) { uid ->
-                clickedPlanetUid = uid
-            }
+            PlanetListContent (
+                planets = planets,
+                searchQuery = "",
+                onSearchQueryChange = {},
+                onPlanetClick = { uid ->
+                    clickedPlanetUid = uid
+                }
+            )
         }
 
         composeTestRule.onNodeWithText("Planet 1").performClick()
@@ -93,7 +107,12 @@ class PlanetListScreenTest {
         val planets = createMockPlanetList(20) // Need enough items to scroll
 
         composeTestRule.setContent {
-            PlanetListContent(planets = planets, onPlanetClick = {})
+            PlanetListContent(
+                planets = planets,
+                searchQuery = "",
+                onSearchQueryChange = {},
+                onPlanetClick = {}
+            )
         }
 
         composeTestRule.onNodeWithTag("ScrollToTopButton").assertIsNotDisplayed()
@@ -108,7 +127,12 @@ class PlanetListScreenTest {
         val planets = createMockPlanetList(20)
 
         composeTestRule.setContent {
-            PlanetListContent(planets = planets, onPlanetClick = {})
+            PlanetListContent(
+                planets = planets,
+                searchQuery = "",
+                onSearchQueryChange = {},
+                onPlanetClick = {}
+            )
         }
 
         composeTestRule.onNodeWithTag("PlanetList").performScrollToIndex(15)

@@ -65,7 +65,10 @@ fun NavGraphBuilder.planetsGraph(
                 }
             }
 
-            PlanetListScreen(uiState = uiState, onUiEvent = viewModel::onUiEvent)
+            PlanetListScreen(
+                uiState = uiState,
+                onUiEvent = viewModel::onUiEvent
+            )
         }
 
         composable<PlanetDetail>{

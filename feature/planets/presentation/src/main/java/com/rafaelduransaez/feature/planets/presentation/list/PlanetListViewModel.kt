@@ -14,6 +14,7 @@ import com.rafaelduransaez.feature.planets.presentation.list.mapper.PlanetListUi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -27,13 +28,25 @@ class PlanetListViewModel @Inject constructor(
     private val refreshPlanetsUseCase: RefreshPlanetsUseCase
 ) : SwapiViewModel<PlanetListUiEffect>() {
 
-    private val _uiState = MutableStateFlow<PlanetListUiState>(PlanetListUiState.Loading)
+    private val _uiState = MutableStateFlow(PlanetListUiState())
+
     val uiState = _uiState
+        .map { state ->
+            val filteredPlanets = if (state.searchQuery.isBlank()) {
+                state.allPlanets
+            } else {
+                state.allPlanets.filter { planet ->
+                    planet.name.contains(state.searchQuery, ignoreCase = true) ||
+                    planet.climate.contains(state.searchQuery, ignoreCase = true)
+                }
+            }
+            state.copy(filteredPlanets = filteredPlanets)
+        }
         .onStart { loadPlanets() }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(CACHE_TIMEOUT),
-            initialValue = PlanetListUiState.Loading
+            initialValue = PlanetListUiState()
         )
 
     internal fun onUiEvent(event: PlanetListUiEvent) {
@@ -41,12 +54,17 @@ class PlanetListViewModel @Inject constructor(
             is PlanetListUiEvent.ShowDetail -> navigateTo(PlanetListUiEffect.NavigateToDetail(event.uid))
             PlanetListUiEvent.Retry -> loadPlanets()
             PlanetListUiEvent.Refresh -> refreshPlanets()
+            is PlanetListUiEvent.Search -> updateSearchQuery(event.query)
         }
+    }
+
+    private fun updateSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
     }
 
     private fun loadPlanets() {
         viewModelScope.launch {
-            _uiState.update { PlanetListUiState.Loading }
+            _uiState.update { it.copy(isLoading = true, errorMessageId = null) }
             getPlanetListUseCase().collect {
                 it.fold(
                     onSuccess = ::onGetPlanetsSuccess,
@@ -72,12 +90,24 @@ class PlanetListViewModel @Inject constructor(
     }
 
     private fun onGetPlanetsSuccess(planets: List<PlanetSummaryModel>) {
-        _uiState.update { PlanetListUiState.ShowPlanets(planets) }
+        _uiState.update { 
+            it.copy(
+                isLoading = false, 
+                errorMessageId = null, 
+                allPlanets = planets
+            )
+        }
     }
 
     private fun onGetPlanetsFailure(error: PlanetError) {
         val messageId = uiMapper.getErrorMessageId(error)
-        _uiState.update { PlanetListUiState.Error(messageId) }
+        _uiState.update { 
+            it.copy(
+                isLoading = false, 
+                errorMessageId = messageId, 
+                allPlanets = emptyList()
+            )
+        }
     }
 
     companion object {
@@ -85,16 +115,20 @@ class PlanetListViewModel @Inject constructor(
     }
 }
 
-sealed interface PlanetListUiState {
-    data object Loading : PlanetListUiState
-    data class ShowPlanets(val planets: List<PlanetSummaryModel>) : PlanetListUiState
-    data class Error(@StringRes val errorMessageId: Int) : PlanetListUiState
-}
+// Just one data class - no intermediate classes needed!
+data class PlanetListUiState(
+    val isLoading: Boolean = true,
+    val errorMessageId: Int? = null,
+    val allPlanets: List<PlanetSummaryModel> = emptyList(),
+    val filteredPlanets: List<PlanetSummaryModel> = emptyList(),
+    val searchQuery: String = ""
+)
 
 sealed interface PlanetListUiEvent {
     data class ShowDetail(val uid: String) : PlanetListUiEvent
     data object Retry : PlanetListUiEvent
     data object Refresh : PlanetListUiEvent
+    data class Search(val query: String) : PlanetListUiEvent
 }
 
 sealed interface PlanetListUiEffect {
